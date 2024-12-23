@@ -182,7 +182,7 @@
                             });
                             this.tiles = updatedTiles;
 
-                            if(existingTile.playerId === {{ $this->player->id }}) {
+                            if(existingTile.playerId === this.player_id) {
                                 this.player_hand++;
                             } else {
                                 this.opponent_hand++;

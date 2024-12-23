@@ -150,7 +150,6 @@ class GameView extends Component
     public function moveElephant($space)
     {
         $this->player->moveElephant($space, skip_bot_phase: true);
-
         Verbs::commit();
 
         $this->opponent->takeBotTurnIfNecessary();
@@ -291,11 +290,11 @@ class GameView extends Component
 
     public function handleForfeit()
     {
-        GameForfeited::fire(
-            game_id: $this->game->id,
-            loser_id: $this->player->id,
-            winner_id: $this->opponent->id,
-        );
+        // GameForfeited::fire(
+        //     game_id: $this->game->id,
+        //     loser_id: $this->player->id,
+        //     winner_id: $this->opponent->id,
+        // );
     }
 
     public function sendFriendRequest()
