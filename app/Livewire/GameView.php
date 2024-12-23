@@ -145,6 +145,10 @@ class GameView extends Component
             player_id: $this->player->id,
             board_before_slide: $this->board,
         );
+
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function moveElephant($space)
@@ -153,6 +157,10 @@ class GameView extends Component
         Verbs::commit();
 
         $this->opponent->takeBotTurnIfNecessary();
+
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function getListeners()
