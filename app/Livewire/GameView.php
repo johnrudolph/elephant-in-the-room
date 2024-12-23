@@ -153,20 +153,7 @@ class GameView extends Component
 
         Verbs::commit();
 
-        if ($this->opponent->is_bot && $this->game->status === 'active' && $this->opponent->hand > 0) {
-            sleep(0.5);
-            $this->opponent->playTile();
-            Verbs::commit();
-
-            $this->game->refresh();
-            $this->game_status = $this->game->status;
-
-            if ($this->game->status === 'active') { 
-                sleep(2);
-                $this->opponent->moveElephant();
-                Verbs::commit();
-            }
-        }
+        $this->opponent->takeBotTurnIfNecessary();
     }
 
     public function getListeners()
@@ -321,6 +308,11 @@ class GameView extends Component
         Verbs::commit();
 
         $this->opponent_is_friend = $this->user->fresh()->friendship_status_with($this->opponent->user->fresh());
+    }
+
+    public function nudgeBot()
+    {
+        $this->opponent->takeBotTurnIfNecessary();
     }
 
     public function render()
