@@ -44,7 +44,7 @@ abstract class TestCase extends BaseTestCase
     public function bootMultiplayerGame(?string $victory_shape = 'square')
     {
         $this->bootTwoHumans();
-        
+
         $game_id = GameCreated::fire(
             user_id: $this->john->id,
             victory_shape: $victory_shape,

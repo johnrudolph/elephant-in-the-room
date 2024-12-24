@@ -35,7 +35,7 @@ class PlayerPlayedTile extends Event
 
         $this->assert(
             $game->current_player_id === $this->player_id,
-            'It is not this player '.$this->player_id.' turn'
+            'It is not player '.$this->player_id.' turn'
         );
 
         $this->assert(
@@ -158,9 +158,11 @@ class PlayerPlayedTile extends Event
             'winning_spaces' => $game->winning_spaces,
         ]);
 
-        Player::find($game->current_player_id)->update([
-            'hand' => PlayerState::load($game->current_player_id)->hand,
-        ]);
+        $game->players()->each(function ($player) {
+            $model = $player->model();
+            $model->hand = PlayerState::load($player->id)->hand;
+            $model->save();
+        });
 
         $move = Move::create([
             'game_id' => $this->game_id,

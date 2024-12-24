@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Move;
 use App\States\GameState;
 use App\States\PlayerState;
+use Thunk\Verbs\Facades\Verbs;
 use App\Events\PlayerPlayedTile;
 use App\Events\PlayerMovedElephant;
 use Glhd\Bits\Database\HasSnowflakes;
@@ -97,5 +98,29 @@ class Player extends Model
             $next_player->playTile();
             $next_player->moveElephant();
         }
+    }
+
+    public function takeBotTurnIfNecessary()
+    {
+        if(
+            ! $this->is_bot 
+            || $this->game->fresh()->status !== 'active' 
+            || $this->fresh()->hand < 1 
+            || $this->game->fresh()->current_player_id !== (string) $this->id
+        ) {
+            return false;
+        }
+
+        if ($this->game->phase === 'tile') {
+            $this->playTile();
+            Verbs::commit();
+        }
+
+        if ($this->game->fresh()->status === 'active') {    
+            $this->moveElephant();
+            Verbs::commit();
+        }
+
+        $this->takeBotTurnIfNecessary();
     }
 }

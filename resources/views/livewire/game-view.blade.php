@@ -182,7 +182,7 @@
                             });
                             this.tiles = updatedTiles;
 
-                            if(existingTile.playerId === {{ $this->player->id }}) {
+                            if(existingTile.playerId === this.player_id) {
                                 this.player_hand++;
                             } else {
                                 this.opponent_hand++;
@@ -343,6 +343,7 @@
     x-data="gameBoard()"
     wire:ignore
     class="flex items-center justify-center flex-col space-y-8"
+    wire:poll.4000ms="nudgeBot"
 >
     {{-- player info --}}
     <div class="flex flex-col items-center justify-center mt-10 space-y-4 w-[300px]">

@@ -32,7 +32,7 @@ class PlayerMovedElephant extends Event
 
         $this->assert(
             $game->current_player_id === $this->player_id,
-            'It is not this player '.$this->player_id.' turn'
+            'It is not player '.$this->player_id.' turn'
         );
 
         $this->assert(

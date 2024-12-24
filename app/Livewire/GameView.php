@@ -145,28 +145,22 @@ class GameView extends Component
             player_id: $this->player->id,
             board_before_slide: $this->board,
         );
+
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function moveElephant($space)
     {
         $this->player->moveElephant($space, skip_bot_phase: true);
-
         Verbs::commit();
 
-        if ($this->opponent->is_bot && $this->game->status === 'active' && $this->opponent->hand > 0) {
-            sleep(0.5);
-            $this->opponent->playTile();
-            Verbs::commit();
+        $this->opponent->takeBotTurnIfNecessary();
 
-            $this->game->refresh();
-            $this->game_status = $this->game->status;
-
-            if ($this->game->status === 'active') { 
-                sleep(2);
-                $this->opponent->moveElephant();
-                Verbs::commit();
-            }
-        }
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function getListeners()
@@ -321,6 +315,11 @@ class GameView extends Component
         Verbs::commit();
 
         $this->opponent_is_friend = $this->user->fresh()->friendship_status_with($this->opponent->user->fresh());
+    }
+
+    public function nudgeBot()
+    {
+        $this->opponent->takeBotTurnIfNecessary();
     }
 
     public function render()
