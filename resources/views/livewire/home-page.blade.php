@@ -93,12 +93,10 @@
                             <div wire:key="game-{{ $game['id'] }}">
                                 <flux:row>
                                     <flux:cell>
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-2 text-xs">
                                             {{ $game['player'] }}
-                                            <flux:badge color="gray" size="sm" variant="outline">{{ $game['rating'] }}</flux:badge>
-                                            @if ($game['is_friend'])
-                                                <flux:badge size="sm" color="green">Friend</flux:badge>
-                                            @endif
+                                            <flux:badge color="gray" size="sm" variant="outline" icon="star">{{ $game['rating'] }}</flux:badge>
+                                       
                                             @if ($game['is_ranked'])
                                                 <flux:badge size="sm" color="fuchsia">Ranked</flux:badge>
                                             @endif
