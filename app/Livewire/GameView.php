@@ -284,6 +284,8 @@ class GameView extends Component
             'winning_spaces' => $this->game->winning_spaces,
             'player_is_victor' => in_array((string) $this->player->id, $this->game->victor_ids),
             'opponent_is_victor' => in_array((string) $this->opponent->id, $this->game->victor_ids),
+            'player_rating' => $this->player->user->fresh()->rating,
+            'opponent_rating' => $this->opponent->user->fresh()->rating,
         ]);
     }
 

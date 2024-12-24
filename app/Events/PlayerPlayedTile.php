@@ -186,6 +186,8 @@ class PlayerPlayedTile extends Event
                 $player->user->rating = $player->user->state()->rating;
                 $player->user->save();
             });
+
+            GameEndedBroadcast::dispatch($game_model);
         }
     }
 }
