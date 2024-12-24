@@ -18,9 +18,13 @@
             opponent_victory_shape: '{{ $this->opponent->victory_shape }}',
             player_id: '{{ $this->player->id }}',
             opponent_id: '{{ $this->opponent->id }}',
+            player_rating: {{ $this->player->user->rating }},
+            opponent_rating: {{ $this->opponent->user->rating }},
         };
 
         return {
+            player_rating: defaults.player_rating,
+            opponent_rating: defaults.opponent_rating,
             player_id: defaults.player_id,
             opponent_id: defaults.opponent_id,
             player_victory_shape: defaults.player_victory_shape,
@@ -323,6 +327,8 @@
                         this.winning_spaces = data[0].winning_spaces;
                         this.player_is_victor = data[0].player_is_victor;
                         this.opponent_is_victor = data[0].opponent_is_victor;
+                        this.player_rating = data[0].player_rating;
+                        this.opponent_rating = data[0].opponent_rating;
                     } else {
                         setTimeout(() => {
                             this.game_status = data[0].status;
@@ -330,6 +336,8 @@
                             this.winning_spaces = data[0].winning_spaces;
                             this.player_is_victor = data[0].player_is_victor;
                             this.opponent_is_victor = data[0].opponent_is_victor;
+                            this.player_rating = data[0].player_rating;
+                            this.opponent_rating = data[0].opponent_rating;
                         }, 700);
                     }
                 });
@@ -364,7 +372,7 @@
                             <p class="font-bold text-white" x-text="player_hand"></p>
                         </div>
                         <flux:badge color="gray" size="sm" variant="outline" icon="star">
-                            {{ $this->player->user->rating }}
+                            <span x-text="player_rating"></span>
                         </flux:badge>
                     </div>
                 </div>
@@ -392,10 +400,10 @@
                         <div class="bg-light-teal dark:bg-dark-teal w-6 h-6 rounded-lg flex items-center justify-center">
                             <p class="font-bold text-white" x-text="opponent_hand"></p>
                         </div>
-                        <flux:badge color="gray" size="sm" variant="outline" icon="star">
-                            {{ $this->opponent->user->rating }}
-                        </flux:badge>
                         @unless($this->opponent->user->email === 'bot@bot.bot')
+                            <flux:badge color="gray" size="sm" variant="outline" icon="star">
+                                <span x-text="opponent_rating"></span>
+                            </flux:badge>
                             <template x-if="opponent_is_friend === 'request_incoming'">
                                 <flux:badge as="button" variant="ghost" inset size="sm" wire:click="sendFriendRequest" icon="user-plus">Confirm</flux:badge>
                             </template>
