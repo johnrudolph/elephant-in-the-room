@@ -1,6 +1,9 @@
 <div>
     <flux:tab.group class="mt-10">
         <flux:tabs class="px-4">
+            @if($this->highlight_rules)
+                <flux:tab name="rules">Rules</flux:tab>
+            @endif
             @if($this->active_game)
                 <flux:tab name="active_game">Active game</flux:tab>
             @endif
@@ -8,7 +11,9 @@
                 <flux:tab name="join">Join</flux:tab>
             @endif
             <flux:tab name="create">Create</flux:tab>
-            <flux:tab name="rules">Rules</flux:tab>
+            @if(! $this->highlight_rules)
+                <flux:tab name="rules">Rules</flux:tab>
+            @endif
         </flux:tabs>
 
         @if($this->active_game)
@@ -116,8 +121,70 @@
         <flux:tab.panel name="rules">
             <flux:card>
                 <flux:subheading>
-                    On your turn, you will slide a tile onto the board, then move the elephant. Sliding a tile into other tiles pushes them into the next space. When one of your tiles is pushed off the board, it returns to your hand. The elephant blocks slides. If you are out of tiles, you skip your turn. The first player to create their victory shape wins.
+                    On your turn, you will slide a tile onto the board, then move the elephant. 
                 </flux:subheading>
+
+                <img 
+                    src="{{ asset('gifs/basic-turn.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <flux:subheading>
+                    Sliding a tile into other tiles pushes them into the next space. When one of your tiles is pushed off the board, it returns to your hand. 
+                </flux:subheading>
+
+                <img 
+                    src="{{ asset('gifs/sliding-tiles.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <flux:subheading>
+                    The elephant blocks slides.
+                </flux:subheading>
+
+                <img 
+                    src="{{ asset('gifs/simple-elephant-block.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <img 
+                    src="{{ asset('gifs/elephant-block-complex.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <flux:subheading>
+                    If you are out of tiles, you skip your turn. 
+                </flux:subheading>
+
+                <img 
+                    src="{{ asset('gifs/out-of-tiles.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <flux:subheading>
+                    Each player has a victory shape. This is the shape you must create to win.
+                </flux:subheading>
+
+                <img 
+                    src="{{ asset('images/victory-shapes.png') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
+
+                <flux:subheading>
+                    The first player to create their victory shape wins.
+                </flux:subheading>
+
+                <img 
+                    src="{{ asset('gifs/victory.gif') }}" 
+                    alt="Game rules demonstration"
+                    class="w-full rounded-lg shadow-lg my-4"
+                />
             </flux:card>
         </flux:tab.panel>
 

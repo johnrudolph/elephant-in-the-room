@@ -33,6 +33,12 @@ class HomePage extends Component
     }
 
     #[Computed]
+    public function highlight_rules()
+    {
+        return $this->user->games->where('status', 'complete')->count() === 0;
+    }
+
+    #[Computed]
     public function active_game()
     {
         $active_game = $this->user->games->where('status', 'active')->last();
@@ -94,9 +100,11 @@ class HomePage extends Component
             is_friends_only: $this->is_friends_only,
         )->game_id;
 
-        $victory_shape = $this->is_bot_game
-            ? 'square'
-            : collect(['square', 'line', 'el', 'zig'])->random();
+        $victory_shape = 'square';
+        
+        // $this->is_bot_game
+        //     ? 'square'
+        //     : collect(['square', 'line', 'el', 'zig'])->random();
 
         PlayerCreated::fire(
             game_id: $game_id,
