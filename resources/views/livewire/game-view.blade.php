@@ -86,8 +86,12 @@
             },
 
             moveElephant(player_id, space) {
-                if (player_id === this.player_id) {
+                if (player_id === this.player_id && this.opponent_hand > 0) {
                     this.player_forfeits_at = null;
+                }
+
+                if (player_id === this.player_id && this.opponent_hand === 0) {
+                    this.player_forfeits_at = new Date(Date.now() + 30000).toISOString();
                 }
 
                 this.animating = true;
@@ -267,6 +271,11 @@
                         this.winning_spaces.push(...opponent_victory_status.winning_spaces);
                         this.player_forfeits_at = null;
                         this.opponent_is_victor = true;
+                    }
+
+                    if (this.player_hand === 0 && this.opponent_hand === 0 && this.game_status === 'active') {
+                        this.game_status = 'complete';
+                        this.player_forfeits_at = null;
                     }
                 }, 500);
             },

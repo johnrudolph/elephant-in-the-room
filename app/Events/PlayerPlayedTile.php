@@ -176,7 +176,9 @@ class PlayerPlayedTile extends Event
             'initial_slide' => ['space' => $this->space, 'direction' => $this->direction],
         ]);
 
-        if (count($game->victor_ids) > 0) {
+        $player_hands_are_empty = $game_model->players->sum(fn($p) => $p->hand) === 0;
+
+        if (count($game->victor_ids) > 0 || $player_hands_are_empty) {
             PlayerPlayedTileBroadcast::dispatch($game_model, $move);
 
             $game_model->players->each(function ($player) {
