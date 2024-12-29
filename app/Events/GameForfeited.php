@@ -20,7 +20,6 @@ class GameForfeited extends Event
 
     public function apply(GameState $state)
     {
-        dump('event applied');
         $state->status = 'complete';
 
         $state->victor_ids = [$this->winner_id];
@@ -44,8 +43,6 @@ class GameForfeited extends Event
             $player->user->rating = $player->user->state()->rating;
             $player->user->save();
         });
-
-        dump('event handled');
 
         GameEndedBroadcast::dispatch($game);
     }

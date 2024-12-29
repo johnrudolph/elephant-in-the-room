@@ -279,7 +279,6 @@ class GameView extends Component
 
     public function handleGameEnded($event)
     {
-        dump('event received');
         $this->dispatch('game-ended', [
             'status' => $this->game->status,
             'victor_ids' => $this->game->victor_ids,
@@ -302,7 +301,6 @@ class GameView extends Component
 
     public function handleForfeit()
     {
-        dump('forfeited');
         GameForfeited::fire(
             game_id: $this->game->id,
             loser_id: $this->player->id,
