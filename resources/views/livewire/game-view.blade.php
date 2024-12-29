@@ -20,9 +20,11 @@
             opponent_id: '{{ $this->opponent->id }}',
             player_rating: {{ $this->player->user->rating }},
             opponent_rating: {{ $this->opponent->user->rating }},
+            player_wants_rematch: {{ $this->player->wants_rematch ? 'true' : 'false' }},
         };
 
         return {
+            player_wants_rematch: defaults.player_wants_rematch,
             player_rating: defaults.player_rating,
             opponent_rating: defaults.opponent_rating,
             player_id: defaults.player_id,
@@ -351,7 +353,7 @@
     x-data="gameBoard()"
     wire:ignore
     class="flex items-center justify-center flex-col space-y-8"
-    wire:poll.4000ms="nudgeBot"
+    wire:poll.4000ms="updateFromPoll"
 >
     {{-- player info --}}
     <div class="flex flex-col items-center justify-center mt-10 space-y-4 w-[300px]">
@@ -584,6 +586,9 @@
                         // Check if timer just hit zero and hasn't been handled yet
                         if (!this.hasExpired && now >= forfeitTime) {
                             this.hasExpired = true;
+                            this.player_forfeits_at = null;
+                            this.game_status = 'complete';
+                            this.opponent_is_victor = true;
                             $wire.handleForfeit();
                         }
                     },
@@ -604,6 +609,24 @@
                     :style="`width: ${progress}%`"
                 ></div>
             </div>
+        </div>
+    </template>
+
+    <template x-if="game_status === 'complete'">
+        <div class="relative" style="top: -2rem;">
+            <template x-if="player_wants_rematch">
+                <div>
+                    <flux:subheading>Rematch requested</flux:subheading>
+                </div>
+            </template>
+            <template x-if="!player_wants_rematch">
+                <flux:button 
+                    wire:click="requestRematch" 
+                    @click="player_wants_rematch = true"
+                >
+                    Rematch
+                </flux:button>
+            </template>
         </div>
     </template>
 </div>
