@@ -23,6 +23,8 @@ class GameCreated extends Event
 
     public ?string $bot_difficulty = 'hard';
 
+    public ?int $is_rematch_from_game_id = null;
+
     public function apply(GameState $state)
     {
         $state->status = 'created';
@@ -57,5 +59,11 @@ class GameCreated extends Event
             'is_ranked' => $this->is_ranked,
             'is_friends_only' => $this->is_friends_only,
         ]);
+
+        if ($this->is_rematch_from_game_id) {
+            $previous_game = Game::find($this->is_rematch_from_game_id);
+            $previous_game->rematch_game_id = $this->game_id;
+            $previous_game->save();
+        }
     }
 }

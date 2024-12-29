@@ -31,6 +31,7 @@ class GameEndedBroadcast implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        dump('broadcast');
         return [
             new PrivateChannel('games.'.$this->game->id),
         ];

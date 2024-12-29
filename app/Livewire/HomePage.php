@@ -92,47 +92,15 @@ class HomePage extends Component
 
     public function newGame()
     {
-        $game_id = GameCreated::fire(
-            user_id: $this->user->id,
-            is_single_player: $this->is_bot_game,
-            bot_difficulty: 'hard',
-            is_ranked: $this->is_ranked_game,
+        $game = Game::fromTemplate(
+            user: $this->user,
+            is_bot_game: $this->is_bot_game,
             is_friends_only: $this->is_friends_only,
-        )->game_id;
-
-        $victory_shape = 'square';
-        
-        // $this->is_bot_game
-        //     ? 'square'
-        //     : collect(['square', 'line', 'el', 'zig'])->random();
-
-        PlayerCreated::fire(
-            game_id: $game_id,
-            user_id: $this->user->id,
-            is_host: true,
-            is_bot: false,
-            victory_shape: $victory_shape,
+            is_ranked: $this->is_ranked_game,
+            is_rematch_from_game_id: null,
         );
 
-        if ($this->is_bot_game) {
-            $bot_id = User::where('email', 'bot@bot.bot')->first()->id;
-
-            PlayerCreated::fire(
-                game_id: $game_id,
-                user_id: $bot_id,
-                is_host: false,
-                is_bot: true,
-                victory_shape: $victory_shape,
-            );
-
-            GameStarted::fire(game_id: $game_id);
-        }
-
-        $this->user->closeInactiveGames();
-
-        Verbs::commit();
-
-        return redirect()->route('games.show', $game_id);
+        return redirect()->route('games.show', $game->id);
     }
 
     public function join(string $game_id)

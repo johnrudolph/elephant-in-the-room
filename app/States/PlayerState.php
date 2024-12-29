@@ -22,6 +22,8 @@ class PlayerState extends State
 
     public string $victory_shape;
 
+    public bool $wants_rematch = false;
+
     public function model(): Player
     {
         return Player::find($this->id);

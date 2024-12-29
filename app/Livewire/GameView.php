@@ -13,6 +13,7 @@ use App\Events\UserAddedFriend;
 use App\Events\PlayerPlayedTile;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
+use App\Events\PlayerRequestedRematch;
 
 class GameView extends Component
 {
@@ -278,6 +279,7 @@ class GameView extends Component
 
     public function handleGameEnded($event)
     {
+        dump('event received');
         $this->dispatch('game-ended', [
             'status' => $this->game->status,
             'victor_ids' => $this->game->victor_ids,
@@ -300,6 +302,7 @@ class GameView extends Component
 
     public function handleForfeit()
     {
+        dump('forfeited');
         GameForfeited::fire(
             game_id: $this->game->id,
             loser_id: $this->player->id,
@@ -319,9 +322,34 @@ class GameView extends Component
         $this->opponent_is_friend = $this->user->fresh()->friendship_status_with($this->opponent->user->fresh());
     }
 
-    public function nudgeBot()
+    public function updateFromPoll()
     {
         $this->opponent->takeBotTurnIfNecessary();
+
+        if ($this->game->fresh()->rematch_game_id) {
+            return redirect()->route('games.show', $this->game->rematch_game_id);
+        }
+    }
+
+    public function requestRematch()
+    {
+        PlayerRequestedRematch::fire(
+            player_id: $this->player->id,
+            user_id: $this->user->id,
+            game_id: $this->game->id,
+        );
+
+        if ($this->opponent->fresh()->wants_rematch) {
+            $game = Game::fromTemplate(
+                user: $this->user, 
+                is_bot_game: $this->opponent->is_bot, 
+                is_friends_only: $this->game->is_friends_only,
+                is_ranked: $this->game->is_ranked,
+                is_rematch_from_game_id: $this->game->id,
+            );
+
+            return redirect()->route('games.show', $game->id);
+        }
     }
 
     public function render()
