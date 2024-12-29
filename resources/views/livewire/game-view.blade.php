@@ -250,8 +250,11 @@
                         return tile;
                     });
                     this.tiles = updatedTiles;
-                    this.animating = false;
                 }, 50);
+
+                setTimeout(() => {
+                    this.animating = false;
+                }, 1000);  // 1000ms = 1 second
 
                 setTimeout(() => {
                     player_victory_status = victory_status(this.tiles, this.player_victory_shape, this.player_id);
@@ -310,11 +313,6 @@
 
                 this.$wire.on('opponent-played-tile', (data) => {
                     this.playTile(data[0].direction, data[0].position, data[0].player_id);
-                    this.game_status = data[0].status;
-                    this.victor_ids = data[0].victor_ids;
-                    this.winning_spaces = data[0].winning_spaces;
-                    this.player_is_victor = data[0].player_is_victor;
-                    this.opponent_is_victor = data[0].opponent_is_victor;
                 });
 
                 this.$wire.on('opponent-moved-elephant', (data) => {
