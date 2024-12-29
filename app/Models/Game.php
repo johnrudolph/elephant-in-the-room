@@ -59,6 +59,8 @@ class Game extends Model
                 is_bot: true,
                 victory_shape: $victory_shape,
             );
+
+            GameStarted::fire(game_id: $game_id);
         }
 
         if ($is_rematch_from_game_id && !$is_bot_game) {
@@ -72,10 +74,10 @@ class Game extends Model
                 victory_shape: $victory_shape,
             );
 
+            GameStarted::fire(game_id: $game_id);
+
             $opponent_user->closeInactiveGames();
         }
-
-        GameStarted::fire(game_id: $game_id);
 
         $user->closeInactiveGames();
 
