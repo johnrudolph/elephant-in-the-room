@@ -254,7 +254,7 @@
 
                 setTimeout(() => {
                     this.animating = false;
-                }, 1000);  // 1000ms = 1 second
+                }, 500);  // 1000ms = 1 second
 
                 setTimeout(() => {
                     player_victory_status = victory_status(this.tiles, this.player_victory_shape, this.player_id);
