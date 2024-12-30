@@ -19,8 +19,6 @@ trait BotLogic
             })
             ->sortByDesc('score');
 
-        dump($possible_moves_ranked);
-
         return $possible_moves_ranked;
     }
 
