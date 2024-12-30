@@ -344,6 +344,7 @@ class GameView extends Component
                 is_friends_only: $this->game->is_friends_only,
                 is_ranked: $this->game->is_ranked,
                 is_rematch_from_game_id: $this->game->id,
+                is_first_player: ! $this->player_is_victor,
             );
 
             return redirect()->route('games.show', $game->id);

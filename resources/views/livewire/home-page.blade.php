@@ -64,6 +64,11 @@
                     </flux:field>
 
                     <flux:field variant="inline" class="w-full flex justify-between">
+                        <flux:switch wire:model.live="is_first_player" />
+                        <flux:label>Play first</flux:label>
+                    </flux:field>
+
+                    <flux:field variant="inline" class="w-full flex justify-between">
                         <flux:switch 
                             wire:model.live="is_ranked_game" 
                             x-bind:disabled="$wire.is_bot_game"
