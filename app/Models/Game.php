@@ -37,11 +37,7 @@ class Game extends Model
             is_rematch_from_game_id: $is_rematch_from_game_id,
         )->game_id;
         
-        $victory_shape = $is_bot_game
-            ? 'square'
-            : collect(['square', 'line', 'el', 'zig', 'pyramid'])->random();
-
-        $victory_shape = 'pyramid';
+        $victory_shape = collect(['square', 'line', 'el', 'zig', 'pyramid'])->random();
 
         PlayerCreated::fire(
             game_id: $game_id,
