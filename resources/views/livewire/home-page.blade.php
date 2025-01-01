@@ -8,9 +8,9 @@
                 <flux:tab name="active_game">Active game</flux:tab>
             @endif
             @if($this->games->count() > 0)
-                <flux:tab name="join">Join</flux:tab>
+                <flux:tab name="join">Join game</flux:tab>
             @endif
-            <flux:tab name="create">Create</flux:tab>
+            <flux:tab name="create">New game</flux:tab>
             @if(! $this->highlight_rules)
                 <flux:tab name="rules">Rules</flux:tab>
             @endif
@@ -70,19 +70,19 @@
                         />
                         <flux:label>Friends only</flux:label>
                     </flux:field>
+                    <flux:field variant="inline" class="w-full flex justify-between">
+                        <flux:switch 
+                            wire:model.live="is_bot_game" 
+                            x-on:change="
+                                if ($event.target.checked) {
+                                    $wire.is_ranked_game = false;
+                                    $wire.is_friends_only = false;
+                                }
+                            "
+                        />
+                        <flux:label>Practice against bot</flux:label>
+                    </flux:field>
                 </div>
-                <flux:field variant="inline" class="w-full flex justify-between">
-                    <flux:switch 
-                        wire:model.live="is_bot_game" 
-                        x-on:change="
-                            if ($event.target.checked) {
-                                $wire.is_ranked_game = false;
-                                $wire.is_friends_only = false;
-                            }
-                        "
-                    />
-                    <flux:label>Practice against bot</flux:label>
-                </flux:field>
             </flux:fieldset>
             <flux:button wire:click="newGame" variant="primary" class="mt-8">Start game</flux:button>
         </flux:tab.panel>
