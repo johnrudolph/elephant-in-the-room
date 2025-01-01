@@ -128,7 +128,7 @@ trait BotLogic
             : $this->player_2_victory_shape;
 
         return match($player_victory_shape) {
-            'el' => $this->hasLineCheck($player_id, $hypothetical_board) || $this->hasSquareCheck($player_id, $hypothetical_board) || $this->hasElCheck($player_id, $hypothetical_board),
+            'el' => $this->hasSquareCheck($player_id, $hypothetical_board) || $this->hasElCheck($player_id, $hypothetical_board),
             'line' => $this->hasLineCheck($player_id, $hypothetical_board),
             'zig' => $this->hasSquareCheck($player_id, $hypothetical_board) || $this->hasZigCheck($player_id, $hypothetical_board),
             'pyramid' => $this->hasPyramidCheck($player_id, $hypothetical_board),
@@ -366,6 +366,104 @@ trait BotLogic
             // x - x
             [11, 13, 15],
             [12, 14, 16],
+
+            // x x x
+            [1, 2, 3],
+            [2, 3, 4],
+            [5, 6, 7],
+            [6, 7, 8],
+            [9, 10, 11],
+            [10, 11, 12],
+            [13, 14, 15],
+            [14, 15, 16],
+
+            // x
+            // x
+            // x
+            [1, 5, 9],
+            [5, 9, 13],
+            [2, 6, 10],
+            [6, 10, 14],
+            [3, 7, 11],
+            [7, 11, 15],
+            [4, 8, 12],
+            [8, 12, 16],
+
+            // x x -
+            // - - x
+            [1, 2, 7],
+            [2, 3, 8],
+            [5, 6, 11],
+            [6, 7, 12],
+            [9, 10, 15],
+            [10, 11, 16],
+
+            // - x x
+            // x - -
+            [2, 3, 5],
+            [3, 4, 6],
+            [6, 7, 9],
+            [7, 8, 10],
+            [10, 11, 13],
+            [11, 12, 14],
+
+            // x - - 
+            // - x x
+            [1, 6, 7],
+            [2, 7, 8],
+            [5, 10, 11],
+            [6, 11, 12],
+            [9, 14, 15],
+            [10, 15, 16],
+
+            // - - x
+            // x x -
+            [3, 5, 6],
+            [4, 6, 7],
+            [7, 9, 10],
+            [8, 10, 11],
+            [11, 13, 14],
+            [12, 14, 15],
+
+            // x -
+            // x -
+            // - x
+            [1, 5, 10],
+            [2, 6, 11],
+            [3, 7, 12],
+            [5, 9, 14],
+            [6, 10, 15],
+            [7, 11, 16],
+
+            // - x
+            // - x
+            // x -
+            [2, 6, 9],
+            [3, 7, 10],
+            [4, 8, 11],
+            [6, 10, 13],
+            [7, 11, 14],
+            [8, 12, 15],
+
+            // x -
+            // - x
+            // - x
+            [1, 6, 10],
+            [2, 7, 11],
+            [3, 8, 12],
+            [5, 10, 14],
+            [6, 11, 15],
+            [7, 12, 16],
+
+            // - x
+            // x -
+            // x -
+            [2, 5, 9],
+            [3, 6, 10],
+            [4, 7, 11],
+            [6, 9, 13],
+            [7, 10, 14],
+            [8, 11, 15],
         ];
 
         return collect($other_el_checks)
