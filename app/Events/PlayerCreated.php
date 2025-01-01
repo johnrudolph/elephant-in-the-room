@@ -26,6 +26,8 @@ class PlayerCreated extends Event
 
     public bool $is_bot;
 
+    public ?bool $is_first_player = false;
+
     public function apply(PlayerState $state)
     {
         $state->game_id = $this->game_id;
@@ -45,11 +47,11 @@ class PlayerCreated extends Event
 
     public function applyToGame(GameState $state)
     {
-        $this->is_host
+        $this->is_first_player
             ? $state->player_1_id = $this->player_id
             : $state->player_2_id = $this->player_id;
 
-        $this->is_host
+        $this->is_first_player
             ? $state->player_1_victory_shape = $this->victory_shape
             : $state->player_2_victory_shape = $this->victory_shape;
     }
@@ -64,11 +66,12 @@ class PlayerCreated extends Event
             'is_bot' => $this->is_bot,
             'victory_shape' => $this->victory_shape,
             'wants_rematch' => $this->is_bot,
+            'is_first_player' => $this->is_first_player,
         ]);
 
         $game = Game::find($this->game_id);
 
-        if ($this->is_host) {
+        if ($this->is_first_player) {
             $game->current_player_id = $this->player_id;
             $game->save();
         }

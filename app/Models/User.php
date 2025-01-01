@@ -125,16 +125,16 @@ class User extends Authenticatable
         return 'not_friends';
     }
 
-    public function closeInactiveGames()
+    public function closeInactiveGamesBefore(Game $game)
     {
         $this->games
-            ->filter(fn($g) => $g->status === 'created' && $g->id !== $this->game_id)
+            ->filter(fn($g) => $g->status === 'created' && $g->id !== $game->id)
             ->each(function ($game) {
                 GameCanceled::fire(game_id: $game->id);
             });
 
         $this->games
-            ->filter(fn($g) => $g->status === 'active' && $g->id !== $this->game_id)
+            ->filter(fn($g) => $g->status === 'active' && $g->id !== $game->id)
             ->each(function ($game) {
                 $players = $game->players;
 

@@ -26,7 +26,7 @@ class Game extends Model
         'winning_spaces' => 'array',
     ];
 
-    public static function fromTemplate(User $user, bool $is_bot_game, bool $is_friends_only, bool $is_ranked, ?int $is_rematch_from_game_id)
+    public static function fromTemplate(User $user, bool $is_bot_game, bool $is_friends_only, bool $is_ranked, ?int $is_rematch_from_game_id, ?bool $is_first_player)
     {
         $game_id = GameCreated::fire(
             user_id: $user->id,
@@ -45,20 +45,32 @@ class Game extends Model
             is_host: true,
             is_bot: false,
             victory_shape: $victory_shape,
+            is_first_player: $is_first_player,
         );
+
+        Verbs::commit();
+
+        $game = Game::find($game_id);
 
         if ($is_bot_game) {
             $bot_id = User::where('email', 'bot@bot.bot')->first()->id;
 
-            PlayerCreated::fire(
+            $bot_player_id = PlayerCreated::fire(
                 game_id: $game_id,
                 user_id: $bot_id,
                 is_host: false,
                 is_bot: true,
                 victory_shape: $victory_shape,
-            );
+                is_first_player: !$is_first_player,
+            )->player_id;
 
-            GameStarted::fire(game_id: $game_id);
+            Verbs::commit();
+
+            $bot_player = Player::find($bot_player_id);
+
+            GameStarted::commit(game_id: $game_id);
+
+            $bot_player->takeBotTurnIfNecessary();
         }
 
         if ($is_rematch_from_game_id && !$is_bot_game) {
@@ -70,18 +82,21 @@ class Game extends Model
                 is_host: false,
                 is_bot: false,
                 victory_shape: $victory_shape,
+                is_first_player: !$is_first_player,
             );
 
             GameStarted::fire(game_id: $game_id);
 
-            $opponent_user->closeInactiveGames();
+            Verbs::commit();
+
+            $opponent_user->closeInactiveGamesBefore($game);
         }
 
-        $user->closeInactiveGames();
+        $user->closeInactiveGamesBefore($game);
 
         Verbs::commit();
 
-        return Game::find($game_id);
+        return $game;
     }
 
     public function state()

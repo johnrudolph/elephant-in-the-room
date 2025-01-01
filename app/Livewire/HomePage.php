@@ -3,11 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Game;
-use App\Models\User;
-use App\Models\Player;
 use Livewire\Component;
-use App\Events\GameCreated;
-use App\Events\GameStarted;
 use App\Events\PlayerCreated;
 use Thunk\Verbs\Facades\Verbs;
 use Livewire\Attributes\Computed;
@@ -19,6 +15,8 @@ class HomePage extends Component
     public bool $is_ranked_game = true;
 
     public bool $is_friends_only = false;
+
+    public bool $is_first_player = true;
 
     #[Computed]
     public function user()
@@ -98,6 +96,7 @@ class HomePage extends Component
             is_friends_only: $this->is_friends_only,
             is_ranked: $this->is_ranked_game,
             is_rematch_from_game_id: null,
+            is_first_player: $this->is_first_player,
         );
 
         return redirect()->route('games.show', $game->id);
@@ -107,15 +106,18 @@ class HomePage extends Component
     {
         $victory_shape = Game::find($game_id)->players->first()->victory_shape;
 
+        $is_first_player = ! Game::find($game_id)->players->first()->is_first_player;
+
         PlayerCreated::fire(
             game_id: (int) $game_id,
             user_id: $this->user->id,
             is_host: false,
             is_bot: false,
             victory_shape: $victory_shape,
+            is_first_player: $is_first_player,
         );
 
-        $this->user->closeInactiveGames();
+        $this->user->closeInactiveGamesBefore(Game::find($game_id));
 
         Verbs::commit();
 

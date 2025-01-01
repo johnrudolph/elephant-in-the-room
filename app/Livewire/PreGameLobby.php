@@ -77,7 +77,7 @@ class PreGameLobby extends Component
             victory_shape: $victory_shape,
         );
 
-        $this->user->closeInactiveGames();
+        $this->user->closeInactiveGamesBefore($this->game);
     }
 
     public function start()
