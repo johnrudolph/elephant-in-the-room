@@ -21,9 +21,11 @@
             player_rating: {{ $this->player->user->rating }},
             opponent_rating: {{ $this->opponent->user->rating }},
             player_wants_rematch: {{ $this->player->wants_rematch ? 'true' : 'false' }},
+            known_move_ids: @json($this->moves->map(fn($move) => (string) $move->id)),
         };
 
         return {
+            known_move_ids: defaults.known_move_ids,
             player_wants_rematch: defaults.player_wants_rematch,
             player_rating: defaults.player_rating,
             opponent_rating: defaults.opponent_rating,
@@ -316,11 +318,17 @@
                 });
 
                 this.$wire.on('opponent-moved-elephant', (data) => {
-                    this.playTile(data[0].tile_direction, data[0].tile_position, data[0].player_id);
+                    if (!this.known_move_ids.includes(data[0].tile_move_id)) {
+                        this.playTile(data[0].tile_direction, data[0].tile_position, data[0].player_id);
+                        this.known_move_ids.push(data[0].tile_move_id);
+                    } 
 
-                    setTimeout(() => {
-                        this.moveElephant(data[0].player_id, data[0].elephant_move_position);
-                    }, 700);
+                    if (!this.known_move_ids.includes(data[0].elephant_move_id)) {
+                        setTimeout(() => {
+                            this.moveElephant(data[0].player_id, data[0].elephant_move_position);
+                            this.known_move_ids.push(data[0].elephant_move_id);
+                        }, 700);
+                    } 
 
                     this.player_forfeits_at = data[0].player_forfeits_at;
                 });

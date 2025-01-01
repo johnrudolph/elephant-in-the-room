@@ -199,9 +199,11 @@ class GameView extends Component
         };
 
         $this->dispatch('opponent-moved-elephant', [
+            'elephant_move_id' => (string) $move->id,
             'elephant_move_position' => $move->elephant_after,
             'player_id' => (string) $move->player_id,
             'player_forfeits_at' => $this->player->fresh()->forfeits_at,
+            'tile_move_id' => (string) $prior_tile_move->id,
             'tile_direction' => $tile_direction,
             'tile_position' => $tile_position,
         ]);
