@@ -16,7 +16,7 @@ export function victory_status(tiles, victoryShape, playerId) {
 
     return {
         has_won: !!winning_set,
-        winning_spaces: winning_set || []
+        winning_spaces: winning_set ?? []
     };
 }
 
