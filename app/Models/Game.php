@@ -39,6 +39,8 @@ class Game extends Model
         
         $victory_shape = collect(['square', 'line', 'el', 'zig', 'pyramid'])->random();
 
+        $victory_shape = 'square';
+
         PlayerCreated::fire(
             game_id: $game_id,
             user_id: $user->id,

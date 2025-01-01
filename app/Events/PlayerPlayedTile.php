@@ -132,6 +132,7 @@ class PlayerPlayedTile extends Event
             $state->winning_spaces = collect($state->victor_ids)
                 ->map(fn($v_id) => $this->state(GameState::class)->winningSpaces(PlayerState::load($v_id), $state->board))
                 ->values()
+                ->unique()
                 ->flatten()
                 ->toArray();
     

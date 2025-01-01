@@ -192,18 +192,24 @@ trait BoardLogic
             default => [],
         };
 
-        return collect($possible_victory_sets)
+        $winning_sets = collect($possible_victory_sets)
             ->filter(fn($set) => 
                 collect($set)
                     ->reduce(function (int $spaces_in_set_occupied_by_player, int $space) use($board, $player) {
                         return $spaces_in_set_occupied_by_player + ($board[$space] === (string) $player->id ? 1 : 0);
                     }, 0) === 4
-            )
-            ->toArray();
+            );
+
+        if ($winning_sets->count() === 0) {
+            return [];
+        }
+
+        return $winning_sets->first();
     }
 
     public function isVictorious(PlayerState $player, array $board)
     {
+        dump($this->winningSpaces($player, $board));
         return count($this->winningSpaces($player, $board)) > 0;
     }
 
