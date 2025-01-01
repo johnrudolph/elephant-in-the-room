@@ -14,10 +14,6 @@ export function victory_status(tiles, victoryShape, playerId) {
         return winning_spaces_occupied === 4;
     });
 
-    if (winning_set) {
-        console.log('winning_set', winning_set, 'playerId', playerId, 'board', board, 'tiles', tiles);
-    }
-
     return {
         has_won: !!winning_set,
         winning_spaces: winning_set ?? []
