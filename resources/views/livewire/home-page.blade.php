@@ -51,19 +51,6 @@
             <flux:fieldset>
                 <div class="space-y-3">
                     <flux:field variant="inline" class="w-full flex justify-between">
-                        <flux:switch 
-                            wire:model.live="is_bot_game" 
-                            x-on:change="
-                                if ($event.target.checked) {
-                                    $wire.is_ranked_game = false;
-                                    $wire.is_friends_only = false;
-                                }
-                            "
-                        />
-                        <flux:label>Versus bot</flux:label>
-                    </flux:field>
-
-                    <flux:field variant="inline" class="w-full flex justify-between">
                         <flux:switch wire:model.live="is_first_player" />
                         <flux:label>Play first</flux:label>
                     </flux:field>
@@ -84,6 +71,18 @@
                         <flux:label>Friends only</flux:label>
                     </flux:field>
                 </div>
+                <flux:field variant="inline" class="w-full flex justify-between">
+                    <flux:switch 
+                        wire:model.live="is_bot_game" 
+                        x-on:change="
+                            if ($event.target.checked) {
+                                $wire.is_ranked_game = false;
+                                $wire.is_friends_only = false;
+                            }
+                        "
+                    />
+                    <flux:label>Practice against bot</flux:label>
+                </flux:field>
             </flux:fieldset>
             <flux:button wire:click="newGame" variant="primary" class="mt-8">Start game</flux:button>
         </flux:tab.panel>
