@@ -209,7 +209,6 @@ trait BoardLogic
 
     public function isVictorious(PlayerState $player, array $board)
     {
-        dump($this->winningSpaces($player, $board));
         return count($this->winningSpaces($player, $board)) > 0;
     }
 
