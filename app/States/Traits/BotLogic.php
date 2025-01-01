@@ -68,25 +68,31 @@ trait BotLogic
 
     public function boardScore(array $hypothetical_board)
     {
+        $bot_id = $this->current_player_id;
+
+        $player_id = $bot_id === $this->player_1_id 
+            ? $this->player_2_id 
+            : $this->player_1_id;
+
         $score = 0;
 
-        $score += $this->numberOfAdjacentTilesFor($this->player_2_id, $hypothetical_board);
+        $score += $this->numberOfAdjacentTilesFor($bot_id, $hypothetical_board);
 
-        $score -= $this->numberOfAdjacentTilesFor($this->player_1_id, $hypothetical_board);
+        $score -= $this->numberOfAdjacentTilesFor($player_id, $hypothetical_board);
 
-        if($this->hypotheticallyHasCheck($this->player_2_id, $hypothetical_board)) {
+        if($this->hypotheticallyHasCheck($bot_id, $hypothetical_board)) {
             $score += 100;
         }
 
-        if($this->hypotheticallyHasCheck($this->player_1_id, $hypothetical_board)) {
+        if($this->hypotheticallyHasCheck($player_id, $hypothetical_board)) {
             $score -= 200;
         }
 
-        if(collect($this->victors($hypothetical_board))->contains($this->player_1_id)) {
+        if(collect($this->victors($hypothetical_board))->contains($player_id)) {
             $score -= 1000;
         }
 
-        if(collect($this->victors($hypothetical_board))->contains($this->player_2_id)) {
+        if(collect($this->victors($hypothetical_board))->contains($bot_id)) {
             $score += 1000000000;
         }
 
@@ -117,7 +123,7 @@ trait BotLogic
     public function botHypotheticallyRunsOutOfTiles(array $hypothetical_board)
     {      
         return collect($hypothetical_board)
-            ->filter(fn ($occupant) => $occupant === $this->player_2_id)
+            ->filter(fn ($occupant) => $occupant === $this->current_player_id)
             ->count() === 8;
     }
 
