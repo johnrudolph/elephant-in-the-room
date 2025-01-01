@@ -101,18 +101,17 @@
                 const coords = this.spaceToCoords(space);
                 this.$refs.elephant.style.transform = `translate(${coords.x}px, ${coords.y}px)`;
                 
-                setTimeout(() => {
-                    this.phase = 'tile';
+                this.phase = 'tile';
 
-                    if (this.is_player_turn && this.opponent_hand > 0) {
-                        this.is_player_turn = false;
-                    } 
-                    
-                    else if (!this.is_player_turn && this.player_hand > 0) {
-                        this.is_player_turn = true;
-                    }
-                    this.animating = false;
-                }, 700);
+                if (this.is_player_turn && this.opponent_hand > 0) {
+                    this.is_player_turn = false;
+                } 
+                
+                else if (!this.is_player_turn && this.player_hand > 0) {
+                    this.is_player_turn = true;
+                }
+                
+                this.animating = false;
             },
 
             playTile(direction, position, player_id) {
