@@ -14,6 +14,7 @@
         <!-- Styles -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @fluxStyles
+        @include('partials.social-meta')
     </head>
     <body class="antialiased font-sans bg-white dark:bg-slate-900 dark:text-white">
         <flux:container class="flex flex-col items-center justify-center">
