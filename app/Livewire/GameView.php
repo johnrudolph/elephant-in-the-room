@@ -206,6 +206,7 @@ class GameView extends Component
             'tile_move_id' => (string) $prior_tile_move->id,
             'tile_direction' => $tile_direction,
             'tile_position' => $tile_position,
+            'previous_elephant_space' => $move->elephant_before,
         ]);
 
         $this->game->refresh();

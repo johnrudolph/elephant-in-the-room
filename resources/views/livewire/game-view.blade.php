@@ -99,8 +99,11 @@
                 }, 100);
             },
 
-            moveElephant(player_id, space) {
-                this.playSound(`footsteps_${Math.floor(Math.random() * 2) + 1}.mp3`);
+            moveElephant(player_id, space, previous_space) {
+                if (space !== previous_space) {
+                    this.playSound(`elephant_${Math.floor(Math.random() * 2) + 1}.mp3`);
+                }
+
                 this.player_forfeits_at = null;
                 if (player_id === this.player_id && this.opponent_hand > 0) {
                     this.player_forfeits_at = null;
@@ -302,6 +305,19 @@
             init() {
                 this.initializeTilesAndElephant();
 
+                // Watch for victory
+                this.$watch('player_is_victor', value => {
+                    if (value === true) {
+                        this.playSound(`victory.mp3`);
+                    }
+                });
+
+                this.$watch('opponent_is_victor', value => {
+                    if (value === true) {
+                        this.playSound(`defeat.mp3`);
+                    }
+                });
+
                 // Set up watchers
                 this.$watch('phase', value => {
                     this.phase = value;
@@ -339,7 +355,7 @@
 
                     if (!this.known_move_ids.includes(data[0].elephant_move_id)) {
                         setTimeout(() => {
-                            this.moveElephant(data[0].player_id, data[0].elephant_move_position);
+                            this.moveElephant(data[0].player_id, data[0].elephant_move_position, data[0].previous_elephant_space);
                             this.known_move_ids.push(data[0].elephant_move_id);
                         }, 700);
                     } 
@@ -508,7 +524,7 @@
                 <div class="relative">
                     <button 
                         x-show="elephant_phase && valid_elephant_moves.includes(i) && game_status === 'active' && is_player_turn"
-                        @click="moveElephant(player_id, i); $wire.moveElephant(i)" 
+                        @click="moveElephant(player_id, i, elephant_space); $wire.moveElephant(i)" 
                         class="absolute inset-0 bg-slate-800 dark:bg-slate-100 opacity-20 animate-pulse rounded-lg z-20"
                     ></button>
                     <div 
