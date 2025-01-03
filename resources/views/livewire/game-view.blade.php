@@ -51,11 +51,23 @@
             valid_elephant_moves: @entangle('valid_elephant_moves'),
             valid_slides: @entangle('valid_slides'),
             opponent_is_friend: defaults.opponent_is_friend,
+            isMuted: localStorage.getItem('gameAudioMuted') === 'true' || false,
             get tile_phase() {
                 return !this.animating && this.is_player_turn && this.phase === 'tile' && this.game_status === 'active';
             },
             get elephant_phase() {
                 return !this.animating && this.is_player_turn && this.phase === 'move' && this.game_status === 'active';
+            },
+
+            playSound(filename) {
+                if (!this.isMuted) {
+                    const audio = new Audio(`/audio/${filename}`);
+                    audio.play();
+                }
+            },
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                localStorage.setItem('gameAudioMuted', this.isMuted);
             },
 
             // Methods
@@ -87,7 +99,11 @@
                 }, 100);
             },
 
-            moveElephant(player_id, space) {
+            moveElephant(player_id, space, previous_space) {
+                if (space !== previous_space) {
+                    this.playSound(`elephant_${Math.floor(Math.random() * 2) + 1}.mp3`);
+                }
+
                 if (player_id === this.player_id && this.opponent_hand > 0) {
                     this.player_forfeits_at = null;
                 }
@@ -115,6 +131,7 @@
             },
 
             playTile(direction, position, player_id) {
+                this.playSound(`slide_${Math.floor(Math.random() * 5) + 1}.mp3`);
                 this.animating = true;
                 this.phase = 'move';
 
@@ -287,6 +304,19 @@
             init() {
                 this.initializeTilesAndElephant();
 
+                // Watch for victory
+                this.$watch('player_is_victor', value => {
+                    if (value === true) {
+                        this.playSound(`victory.mp3`);
+                    }
+                });
+
+                this.$watch('opponent_is_victor', value => {
+                    if (value === true) {
+                        this.playSound(`defeat.mp3`);
+                    }
+                });
+
                 // Set up watchers
                 this.$watch('phase', value => {
                     this.phase = value;
@@ -324,7 +354,7 @@
 
                     if (!this.known_move_ids.includes(data[0].elephant_move_id)) {
                         setTimeout(() => {
-                            this.moveElephant(data[0].player_id, data[0].elephant_move_position);
+                            this.moveElephant(data[0].player_id, data[0].elephant_move_position, data[0].previous_elephant_space);
                             this.known_move_ids.push(data[0].elephant_move_id);
                         }, 700);
                     } 
@@ -493,7 +523,7 @@
                 <div class="relative">
                     <button 
                         x-show="elephant_phase && valid_elephant_moves.includes(i) && game_status === 'active' && is_player_turn"
-                        @click="moveElephant(player_id, i); $wire.moveElephant(i)" 
+                        @click="moveElephant(player_id, i, elephant_space); $wire.moveElephant(i)" 
                         class="absolute inset-0 bg-slate-800 dark:bg-slate-100 opacity-20 animate-pulse rounded-lg z-20"
                     ></button>
                     <div 
@@ -626,6 +656,15 @@
         </div>
     </template>
 
+    {{-- Mute button --}}
+    <div class="fixed bottom-4 right-4">
+        <template x-if="isMuted">
+            <flux:button @click="toggleMute()" variant="subtle" icon="speaker-x-mark" />
+        </template>
+        <template x-if="!isMuted">
+            <flux:button @click="toggleMute()" variant="subtle" icon="speaker-wave" />
+        </template>
+    </div>
     <template x-if="game_status === 'complete'">
         <div class="relative" style="top: -2rem;">
             <template x-if="player_wants_rematch">
