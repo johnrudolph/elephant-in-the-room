@@ -104,7 +104,6 @@
                     this.playSound(`elephant_${Math.floor(Math.random() * 2) + 1}.mp3`);
                 }
 
-                this.player_forfeits_at = null;
                 if (player_id === this.player_id && this.opponent_hand > 0) {
                     this.player_forfeits_at = null;
                 }
