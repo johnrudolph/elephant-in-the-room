@@ -32,7 +32,7 @@ class PlayerMovedElephant extends Event
 
         $this->assert(
             $game->current_player_id === $this->player_id,
-            'It is not this player '.$this->player_id.' turn'
+            'It is not player '.$this->player_id.' turn'
         );
 
         $this->assert(
@@ -126,6 +126,10 @@ class PlayerMovedElephant extends Event
             'forfeits_at' => Carbon::now()->addSeconds(35),
         ]);
 
-        PlayerMovedElephantBroadcast::dispatch($game_model, $move);
+        $prior_tile_move = $game_model->moves
+            ->filter(fn($m) => $m->type === 'tile')
+            ->last();
+
+        PlayerMovedElephantBroadcast::dispatch($game_model, $move, $prior_tile_move);
     }
 }

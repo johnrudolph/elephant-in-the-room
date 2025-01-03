@@ -4,6 +4,7 @@ namespace App\Events;
 
 use App\Models\Game;
 use App\Models\Move;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -19,7 +20,7 @@ class PlayerMovedElephantBroadcast implements ShouldBroadcast
     /**
      * Create a new event instance.
      */
-    public function __construct(public readonly Game $game, public Move $move)
+    public function __construct(public readonly Game $game, public Move $elephant_move, public Move $prior_tile_move)
     {
         //
     }
@@ -39,7 +40,8 @@ class PlayerMovedElephantBroadcast implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'move_id' => $this->move->id,
+            'elephant_move_id' => $this->elephant_move->id,
+            'tile_move_id' => $this->prior_tile_move->id,
         ];
     }
 }

@@ -13,6 +13,7 @@ use App\Events\UserAddedFriend;
 use App\Events\PlayerPlayedTile;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
+use App\Events\PlayerRequestedRematch;
 
 class GameView extends Component
 {
@@ -88,7 +89,7 @@ class GameView extends Component
             return redirect()->route('dashboard');
         }
 
-        if (! $this->player || ! $this->opponent) {
+        if (! $this->player || ! $this->opponent || $this->game->status === 'created') {
             return redirect()->route('games.pre-game-lobby.show', $this->game);
         }
 
@@ -145,28 +146,22 @@ class GameView extends Component
             player_id: $this->player->id,
             board_before_slide: $this->board,
         );
+
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function moveElephant($space)
     {
         $this->player->moveElephant($space, skip_bot_phase: true);
-
         Verbs::commit();
 
-        if ($this->opponent->is_bot && $this->game->status === 'active' && $this->opponent->hand > 0) {
-            sleep(0.5);
-            $this->opponent->playTile();
-            Verbs::commit();
+        $this->opponent->takeBotTurnIfNecessary();
 
-            $this->game->refresh();
-            $this->game_status = $this->game->status;
-
-            if ($this->game->status === 'active') { 
-                sleep(2);
-                $this->opponent->moveElephant();
-                Verbs::commit();
-            }
-        }
+        $this->game->refresh();
+        $this->valid_slides = $this->game->valid_slides;
+        $this->valid_elephant_moves = $this->game->valid_elephant_moves;
     }
 
     public function getListeners()
@@ -174,24 +169,43 @@ class GameView extends Component
         return [
             "echo-private:games.{$this->game->id}:PlayerMovedElephantBroadcast" => 'handleElephantMove',
             "echo-private:games.{$this->game->id}:PlayerPlayedTileBroadcast" => 'handleTilePlayed',
-            "echo-private:users.{$this->user->id}:UserAddedFriendBroadcast" => 'handleFriendRequest',
             "echo-private:games.{$this->game->id}:GameEndedBroadcast" => 'handleGameEnded',
-            "echo-private:games.{$this->game->id}:GameForfeitedBroadcast" => 'handleGameForfeited',
+            "echo-private:users.{$this->user->id}:UserAddedFriendBroadcast" => 'handleFriendRequest',
         ];
     }
 
     public function handleElephantMove($event)
     {
-        $move = Move::find($event['move_id']);
+        $move = Move::find($event['elephant_move_id']);
+
+        $prior_tile_move = Move::find($event['tile_move_id']);
 
         if ($move->player_id === $this->player->id) {
             return;
         }
 
+        $tile_direction = match($prior_tile_move->initial_slide['direction']) {
+            'down' => 'down',
+            'up' => 'up',
+            'left' => 'from_right',
+            'right' => 'from_left',
+        };
+
+        $tile_position = match($prior_tile_move->initial_slide['direction']) {
+            'down' => $prior_tile_move->initial_slide['space'] - 1,
+            'up' => $prior_tile_move->initial_slide['space'] - 13,
+            'right' => ($prior_tile_move->initial_slide['space'] - 1) / 4,
+            'left' => ($prior_tile_move->initial_slide['space'] / 4) - 1,
+        };
+
         $this->dispatch('opponent-moved-elephant', [
-            'position' => $move->elephant_after,
+            'elephant_move_id' => (string) $move->id,
+            'elephant_move_position' => $move->elephant_after,
             'player_id' => (string) $move->player_id,
             'player_forfeits_at' => $this->player->fresh()->forfeits_at,
+            'tile_move_id' => (string) $prior_tile_move->id,
+            'tile_direction' => $tile_direction,
+            'tile_position' => $tile_position,
         ]);
 
         $this->game->refresh();
@@ -207,6 +221,8 @@ class GameView extends Component
         $this->game_status = $this->game->status;
 
         $this->is_player_turn = $this->game->current_player_id === (string) $this->player->id && $this->game->status === 'active';
+
+        $this->player_forfeits_at = $this->player->fresh()->forfeits_at;
     }
 
     public function handleTilePlayed($event)
@@ -231,12 +247,6 @@ class GameView extends Component
             'left' => ($move->initial_slide['space'] / 4) - 1,
         };
 
-        $this->dispatch('opponent-played-tile', [
-            'direction' => $direction,
-            'position' => $position,
-            'player_id' => (string) $move->player_id
-        ]);
-
         $this->game->refresh();
 
         $this->valid_slides = $this->game->valid_slides;
@@ -258,6 +268,15 @@ class GameView extends Component
             (string) $this->opponent->id, 
             $this->game->victor_ids
         );
+
+        $this->dispatch('opponent-played-tile', [
+            'direction' => $direction,
+            'position' => $position,
+            'player_id' => (string) $move->player_id,
+            'victor_ids' => $this->game->victor_ids,
+            'winning_spaces' => $this->game->winning_spaces,
+            'game_status' => $this->game->status,
+        ]);
     }
 
     public function handleGameEnded($event)
@@ -268,6 +287,8 @@ class GameView extends Component
             'winning_spaces' => $this->game->winning_spaces,
             'player_is_victor' => in_array((string) $this->player->id, $this->game->victor_ids),
             'opponent_is_victor' => in_array((string) $this->opponent->id, $this->game->victor_ids),
+            'player_rating' => $this->player->user->fresh()->rating,
+            'opponent_rating' => $this->opponent->user->fresh()->rating,
         ]);
     }
 
@@ -299,6 +320,37 @@ class GameView extends Component
         Verbs::commit();
 
         $this->opponent_is_friend = $this->user->fresh()->friendship_status_with($this->opponent->user->fresh());
+    }
+
+    public function updateFromPoll()
+    {
+        $this->opponent->takeBotTurnIfNecessary();
+
+        if ($this->game->fresh()->rematch_game_id) {
+            return redirect()->route('games.show', $this->game->rematch_game_id);
+        }
+    }
+
+    public function requestRematch()
+    {
+        PlayerRequestedRematch::fire(
+            player_id: $this->player->id,
+            user_id: $this->user->id,
+            game_id: $this->game->id,
+        );
+
+        if ($this->opponent->fresh()->wants_rematch) {
+            $game = Game::fromTemplate(
+                user: $this->user, 
+                is_bot_game: $this->opponent->is_bot, 
+                is_friends_only: $this->game->is_friends_only,
+                is_ranked: $this->game->is_ranked,
+                is_rematch_from_game_id: $this->game->id,
+                is_first_player: ! $this->player_is_victor,
+            );
+
+            return redirect()->route('games.show', $game->id);
+        }
     }
 
     public function render()

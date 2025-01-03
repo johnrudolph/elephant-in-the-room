@@ -1,4 +1,4 @@
-<footer class="fixed bottom-0 left-0 right-0 py-4 text-center text-sm flex flex-col items-center">
+<footer class="fixed bottom-0 left-0 right-0 py-4 text-center text-sm flex flex-col items-center bg-white dark:bg-slate-900">
     <p>
         Made with ❤️ by 
         <a href="https://www.catacombian.com/elephant-in-the-room" target="_blank">

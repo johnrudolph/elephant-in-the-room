@@ -44,7 +44,7 @@ abstract class TestCase extends BaseTestCase
     public function bootMultiplayerGame(?string $victory_shape = 'square')
     {
         $this->bootTwoHumans();
-        
+
         $game_id = GameCreated::fire(
             user_id: $this->john->id,
             victory_shape: $victory_shape,
@@ -61,6 +61,7 @@ abstract class TestCase extends BaseTestCase
             is_host: true,
             is_bot: false,
             victory_shape: $victory_shape,
+            is_first_player: true,
         )->player_id;
 
         $this->player_1 = Player::find($player_1_id);
@@ -107,6 +108,7 @@ abstract class TestCase extends BaseTestCase
             is_host: true,
             is_bot: false,
             victory_shape: $victory_shape,
+            is_first_player: true,
         )->player_id;
 
         $player_2_id = PlayerCreated::fire(

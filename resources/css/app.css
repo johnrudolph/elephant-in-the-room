@@ -20,4 +20,8 @@
     }
 }
 
-.victory-wave-glow { animation: victory-wave-glow 1.5s ease-in-out infinite; border-radius: 0.75rem; }
+.victory-wave-glow { 
+    animation: victory-wave-glow 1.5s ease-in-out infinite; 
+    border-radius: 0.75rem; 
+    z-index: 10; 
+}

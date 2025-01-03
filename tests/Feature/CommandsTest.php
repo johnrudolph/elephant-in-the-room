@@ -27,7 +27,7 @@ it('forfeits abandoned games', function () {
     $this->travel(2)->minutes();
     Artisan::call('games:forfeit-games');
     $this->game->refresh();
-    expect($this->game->status)->toBe('completed');
+    expect($this->game->status)->toBe('complete');
     expect($this->game->victor_ids)->toContain($this->player_2->id);
     expect(count($this->game->winning_spaces))->toBe(0);
 });
@@ -54,7 +54,7 @@ it('does not forfeit nonabandoned games', function () {
     $this->travel(200)->seconds();
     Artisan::call('games:forfeit-games');
     $this->game->refresh();
-    expect($this->game->status)->toBe('completed');
+    expect($this->game->status)->toBe('complete');
     expect($this->game->victor_ids)->toContain($this->player_1->id);
     expect(count($this->game->winning_spaces))->toBe(0);
 });

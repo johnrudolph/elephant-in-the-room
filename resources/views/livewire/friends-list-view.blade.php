@@ -1,5 +1,5 @@
 <div>
-    <div class="flex space-x-4">
+    <div class="flex space-x-4 mt-10">
         <div class="w-full">
             <flux:input wire:model="invitee_email" placeholder="Invite a friend by email" />
             <flux:error name="invitee_email" />

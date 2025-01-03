@@ -3,11 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Game;
-use App\Models\User;
-use App\Models\Player;
 use Livewire\Component;
-use App\Events\GameCreated;
-use App\Events\GameStarted;
 use App\Events\PlayerCreated;
 use Thunk\Verbs\Facades\Verbs;
 use Livewire\Attributes\Computed;
@@ -19,6 +15,8 @@ class HomePage extends Component
     public bool $is_ranked_game = true;
 
     public bool $is_friends_only = false;
+
+    public bool $is_first_player = true;
 
     #[Computed]
     public function user()
@@ -33,9 +31,29 @@ class HomePage extends Component
     }
 
     #[Computed]
+    public function highlight_rules()
+    {
+        return $this->user->games->where('status', 'complete')->count() === 0;
+    }
+
+    #[Computed]
     public function active_game()
     {
-        return $this->user->games->where('status', 'active')->last();
+        $active_game = $this->user->games->where('status', 'active')->last();
+
+        if ($active_game) {
+            return $active_game;
+        }
+
+        $upcoming_game = $this->user->games->where('status', 'created')
+            ->filter(fn ($g) => $g->players->count() === 2)
+            ->first();
+
+        if ($upcoming_game) {
+            return $upcoming_game;
+        }
+
+        return null;
     }
 
     #[Computed]
@@ -57,6 +75,7 @@ class HomePage extends Component
             ->reject(function ($game) {
                 return $game->players->first()->user->id === $this->user->id;
             })
+            ->reject(fn ($g) => $g->players->count() === 2)
             ->sortByDesc('created_at')
             ->map(function ($game) {
                 return [
@@ -71,48 +90,23 @@ class HomePage extends Component
 
     public function newGame()
     {
-        $game_id = GameCreated::fire(
-            user_id: $this->user->id,
-            is_single_player: $this->is_bot_game,
-            bot_difficulty: 'hard',
-            is_ranked: $this->is_ranked_game,
+        $game = Game::fromTemplate(
+            user: $this->user,
+            is_bot_game: $this->is_bot_game,
             is_friends_only: $this->is_friends_only,
-        )->game_id;
-
-        $victory_shape = collect(['square', 'line', 'el', 'zig'])->random();
-
-        PlayerCreated::fire(
-            game_id: $game_id,
-            user_id: $this->user->id,
-            is_host: true,
-            is_bot: false,
-            victory_shape: $victory_shape,
+            is_ranked: $this->is_ranked_game,
+            is_rematch_from_game_id: null,
+            is_first_player: $this->is_first_player,
         );
 
-        if ($this->is_bot_game) {
-            $bot_id = User::where('email', 'bot@bot.bot')->first()->id;
-
-            PlayerCreated::fire(
-                game_id: $game_id,
-                user_id: $bot_id,
-                is_host: false,
-                is_bot: true,
-                victory_shape: $victory_shape,
-            );
-
-            GameStarted::fire(game_id: $game_id);
-        }
-
-        $this->user->closeInactiveGames();
-
-        Verbs::commit();
-
-        return redirect()->route('games.show', $game_id);
+        return redirect()->route('games.show', $game->id);
     }
 
     public function join(string $game_id)
     {
         $victory_shape = Game::find($game_id)->players->first()->victory_shape;
+
+        $is_first_player = ! Game::find($game_id)->players->first()->is_first_player;
 
         PlayerCreated::fire(
             game_id: (int) $game_id,
@@ -120,11 +114,10 @@ class HomePage extends Component
             is_host: false,
             is_bot: false,
             victory_shape: $victory_shape,
+            is_first_player: $is_first_player,
         );
 
-        GameStarted::fire(game_id: (int) $game_id);
-
-        $this->user->closeInactiveGames();
+        $this->user->closeInactiveGamesBefore(Game::find($game_id));
 
         Verbs::commit();
 

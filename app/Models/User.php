@@ -4,7 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\States\GameState;
 use App\States\UserState;
+use App\States\PlayerState;
 use App\Events\GameCanceled;
 use App\Events\GameForfeited;
 use Glhd\Bits\Database\HasSnowflakes;
@@ -123,24 +125,43 @@ class User extends Authenticatable
         return 'not_friends';
     }
 
-    public function closeInactiveGames()
+    public function closeInactiveGamesBefore(Game $game)
     {
         $this->games
-            ->filter(fn($g) => $g->status === 'created' && $g->id !== $this->game_id)
+            ->filter(fn($g) => $g->status === 'created' && $g->id !== $game->id)
             ->each(function ($game) {
                 GameCanceled::fire(game_id: $game->id);
             });
 
         $this->games
-            ->filter(fn($g) => $g->status === 'active' && $g->id !== $this->game_id)
+            ->filter(fn($g) => $g->status === 'active' && $g->id !== $game->id)
             ->each(function ($game) {
                 $players = $game->players;
 
                 GameForfeited::fire(
                     game_id: $game->id,
-                    winner_id: $players->firstWhere('user_id', '!=', $this->id),
-                    loser_id: $players->firstWhere('user_id', $this->id),
+                    winner_id: $players->firstWhere('user_id', '!=', $this->id)->id,
+                    loser_id: $players->firstWhere('user_id', $this->id)->id,
                 );
             });
+    }
+
+    public static function calculateNewRating(PlayerState $player, GameState $game): int
+    {
+        $k_factor = 32;
+        $player_rating = $player->user()->rating;
+        $opponent_rating = $player->opponent()->user()->rating;
+
+        $expected_score = 1 / (1 + (10 ** (($opponent_rating - $player_rating) / 400)));
+
+        $actual_score = match(true) {
+            count($game->victor_ids) === 1 && in_array($player->id, $game->victor_ids) => 1.0,
+            count($game->victor_ids) === 1 => 0.0,
+            default => 0.5 // draw
+        };
+
+        $new_rating = $player_rating + ($k_factor * ($actual_score - $expected_score));
+        
+        return max(100, min(3000, round($new_rating)));
     }
 }

@@ -13,10 +13,26 @@
             winning_spaces: @json($this->winning_spaces),
             player_is_victor: {{ $this->player_is_victor ? 'true' : 'false' }},
             opponent_is_victor: {{ $this->opponent_is_victor ? 'true' : 'false' }},
-            player_forfeits_at: @json($this->player_forfeits_at),
+            player_forfeits_at: @json($this->player_forfeits_at ?? null),
+            player_victory_shape: '{{ $this->player->victory_shape }}',
+            opponent_victory_shape: '{{ $this->opponent->victory_shape }}',
+            player_id: '{{ $this->player->id }}',
+            opponent_id: '{{ $this->opponent->id }}',
+            player_rating: {{ $this->player->user->rating }},
+            opponent_rating: {{ $this->opponent->user->rating }},
+            player_wants_rematch: {{ $this->player->wants_rematch ? 'true' : 'false' }},
+            known_move_ids: @json($this->moves->map(fn($move) => (string) $move->id)),
         };
 
         return {
+            known_move_ids: defaults.known_move_ids,
+            player_wants_rematch: defaults.player_wants_rematch,
+            player_rating: defaults.player_rating,
+            opponent_rating: defaults.opponent_rating,
+            player_id: defaults.player_id,
+            opponent_id: defaults.opponent_id,
+            player_victory_shape: defaults.player_victory_shape,
+            opponent_victory_shape: defaults.opponent_victory_shape,
             player_forfeits_at: defaults.player_forfeits_at,
             victor_ids: defaults.victor_ids,
             player_is_victor: defaults.player_is_victor,
@@ -70,12 +86,12 @@
                         id: this.nextId++,
                         x: this.spaceToCoords({{ $space }}).x,
                         y: this.spaceToCoords({{ $space }}).y,
-                        playerId: {{ $playerId }},
+                        playerId: '{{ $playerId }}',
                         space: {{ $space }}
                     });
                 @endforeach
 
-                const elephant_coords = this.spaceToCoords(this.elephant_space);  
+                const elephant_coords = this.spaceToCoords(this.elephant_space);
                 this.$refs.elephant.style.transform = `translate(${elephant_coords.x}px, ${elephant_coords.y}px)`;
                 
                 setTimeout(() => {
@@ -86,23 +102,30 @@
             moveElephant(player_id, space) {
                 this.playSound(`footsteps_${Math.floor(Math.random() * 2) + 1}.mp3`);
                 this.player_forfeits_at = null;
+                if (player_id === this.player_id && this.opponent_hand > 0) {
+                    this.player_forfeits_at = null;
+                }
+
+                if (player_id === this.player_id && this.opponent_hand === 0) {
+                    this.player_forfeits_at = new Date(Date.now() + 30000).toISOString();
+                }
+
                 this.animating = true;
                 this.elephant_space = space;
                 const coords = this.spaceToCoords(space);
                 this.$refs.elephant.style.transform = `translate(${coords.x}px, ${coords.y}px)`;
                 
-                setTimeout(() => {
-                    this.phase = 'tile';
+                this.phase = 'tile';
 
-                    if (this.is_player_turn && this.opponent_hand > 0) {
-                        this.is_player_turn = false;
-                    } 
-                    
-                    else if (!this.is_player_turn && this.player_hand > 0) {
-                        this.is_player_turn = true;
-                    }
-                    this.animating = false;
-                }, 700);
+                if (this.is_player_turn && this.opponent_hand > 0) {
+                    this.is_player_turn = false;
+                } 
+                
+                else if (!this.is_player_turn && this.player_hand > 0) {
+                    this.is_player_turn = true;
+                }
+                
+                this.animating = false;
             },
 
             playTile(direction, position, player_id) {
@@ -110,7 +133,7 @@
                 this.animating = true;
                 this.phase = 'move';
 
-                if (player_id === {{ $this->player->id }}) {
+                if (player_id === this.player_id) {
                     this.player_hand--;
                 } else {
                     this.opponent_hand--;
@@ -185,7 +208,7 @@
                             });
                             this.tiles = updatedTiles;
 
-                            if(existingTile.playerId === {{ $this->player->id }}) {
+                            if(existingTile.playerId === this.player_id) {
                                 this.player_hand++;
                             } else {
                                 this.opponent_hand++;
@@ -243,8 +266,37 @@
                         return tile;
                     });
                     this.tiles = updatedTiles;
-                    this.animating = false;
                 }, 50);
+
+                setTimeout(() => {
+                    this.animating = false;
+                }, 500);  // 1000ms = 1 second
+
+                setTimeout(() => {
+                    player_victory_status = victory_status(this.tiles, this.player_victory_shape, this.player_id);
+                    opponent_victory_status = victory_status(this.tiles, this.opponent_victory_shape, this.opponent_id);
+
+                    if (player_victory_status.has_won) {
+                        this.victor_ids.push(this.player_id);
+                        this.game_status = 'complete';
+                        this.winning_spaces.push(...player_victory_status.winning_spaces);
+                        this.player_forfeits_at = null;
+                        this.player_is_victor = true;
+                    }
+
+                    if (opponent_victory_status.has_won) {
+                        this.victor_ids.push(this.opponent_id);
+                        this.game_status = 'complete';
+                        this.winning_spaces.push(...opponent_victory_status.winning_spaces);
+                        this.player_forfeits_at = null;
+                        this.opponent_is_victor = true;
+                    }
+
+                    if (this.player_hand === 0 && this.opponent_hand === 0 && this.game_status === 'active') {
+                        this.game_status = 'complete';
+                        this.player_forfeits_at = null;
+                    }
+                }, 500);
             },
 
             init() {
@@ -280,7 +332,18 @@
                 });
 
                 this.$wire.on('opponent-moved-elephant', (data) => {
-                    this.moveElephant(data[0].player_id, data[0].position);
+                    if (!this.known_move_ids.includes(data[0].tile_move_id)) {
+                        this.playTile(data[0].tile_direction, data[0].tile_position, data[0].player_id);
+                        this.known_move_ids.push(data[0].tile_move_id);
+                    } 
+
+                    if (!this.known_move_ids.includes(data[0].elephant_move_id)) {
+                        setTimeout(() => {
+                            this.moveElephant(data[0].player_id, data[0].elephant_move_position);
+                            this.known_move_ids.push(data[0].elephant_move_id);
+                        }, 700);
+                    } 
+
                     this.player_forfeits_at = data[0].player_forfeits_at;
                 });
 
@@ -295,6 +358,8 @@
                         this.winning_spaces = data[0].winning_spaces;
                         this.player_is_victor = data[0].player_is_victor;
                         this.opponent_is_victor = data[0].opponent_is_victor;
+                        this.player_rating = data[0].player_rating;
+                        this.opponent_rating = data[0].opponent_rating;
                     } else {
                         setTimeout(() => {
                             this.game_status = data[0].status;
@@ -302,6 +367,8 @@
                             this.winning_spaces = data[0].winning_spaces;
                             this.player_is_victor = data[0].player_is_victor;
                             this.opponent_is_victor = data[0].opponent_is_victor;
+                            this.player_rating = data[0].player_rating;
+                            this.opponent_rating = data[0].opponent_rating;
                         }, 700);
                     }
                 });
@@ -315,44 +382,59 @@
     x-data="gameBoard()"
     wire:ignore
     class="flex items-center justify-center flex-col space-y-8"
+    wire:poll.4000ms="updateFromPoll"
 >
     {{-- player info --}}
-    <div class="flex flex-col items-center justify-center space-y-4 w-[300px]">
-        <div class="w-full" :class="{ 'victory-wave-glow': player_is_victor }">
-            <flux:card class="w-full">
-                <div class="flex flex-row justify-between items-center text-zinc-800 dark:text-zinc-200" :class="{ 'animate-pulse': is_player_turn && game_status === 'active' }">
-                    <div class="flex flex-col items-start w-full space-y-2">
-                        <flux:heading class="text-left w-full">
-                            {{ $this->player->user->name }}
-                        </flux:heading>
-                        <div class="flex flex-row space-x-2 items-center">
-                            <div class="bg-orange dark:bg-dark-orange w-6 h-6 rounded-lg flex items-center justify-center">
-                                <p class="font-bold text-white" x-text="player_hand"></p>
-                            </div>
-                            <flux:badge color="gray" size="sm" variant="outline" icon="star">{{ $this->player->user->rating }}</flux:badge>
+    <div class="flex flex-col items-center justify-center mt-10 space-y-4 w-[300px]">
+        <!-- Player section -->
+        <div class="w-full p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+            :class="{ 
+                'victory-wave-glow': player_is_victor,
+                'animate-pulse': is_player_turn && game_status === 'active' 
+            }"
+        >
+            <div class="flex justify-between items-center text-zinc-800 dark:text-zinc-200">
+                <div class="space-y-2">
+                    <flux:subheading class="text-left" size="sm">
+                        {{ $this->player->user->name }}
+                    </flux:subheading>
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-orange dark:bg-dark-orange w-6 h-6 rounded-lg flex items-center justify-center">
+                            <p class="font-bold text-white" x-text="player_hand"></p>
                         </div>
+                        <flux:badge color="gray" size="sm" variant="outline" icon="star">
+                            <span x-text="player_rating"></span>
+                        </flux:badge>
                     </div>
-                    <x-dynamic-component 
-                        :component="'svg.' . $this->player->victory_shape"
-                        class="w-14 h-14"
-                    />
                 </div>
-            </flux:card>
+                
+                <x-dynamic-component 
+                    :component="'svg.' . $this->player->victory_shape"
+                    class="w-14 h-14"
+                />
+            </div>
         </div>
 
-        <div class="w-full" :class="{ 'victory-wave-glow': opponent_is_victor }">
-            <flux:card class="w-full">
-                <div class="flex flex-row justify-between items-center text-zinc-800 dark:text-zinc-200" :class="{ 'animate-pulse': !is_player_turn && game_status === 'active' }">
-                <div class="flex flex-col items-start w-full space-y-2">
-                    <flux:heading class="text-left w-full">
+        <!-- Opponent section -->
+        <div class="w-full p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+            :class="{ 
+                'victory-wave-glow': opponent_is_victor,
+                'animate-pulse': !is_player_turn && game_status === 'active' 
+            }"
+        >
+            <div class="flex justify-between items-center text-zinc-800 dark:text-zinc-200">
+                <div class="space-y-2">
+                    <flux:subheading class="text-left" size="sm">
                         {{ $this->opponent->user->name }}
-                    </flux:heading>
-                    <div class="flex flex-row space-x-2 items-center">
+                    </flux:subheading>
+                    <div class="flex items-center space-x-2">
                         <div class="bg-light-teal dark:bg-dark-teal w-6 h-6 rounded-lg flex items-center justify-center">
                             <p class="font-bold text-white" x-text="opponent_hand"></p>
                         </div>
-                        <flux:badge color="gray" size="sm" variant="outline" icon="star">{{ $this->opponent->user->rating }}</flux:badge>
                         @unless($this->opponent->user->email === 'bot@bot.bot')
+                            <flux:badge color="gray" size="sm" variant="outline" icon="star">
+                                <span x-text="opponent_rating"></span>
+                            </flux:badge>
                             <template x-if="opponent_is_friend === 'request_incoming'">
                                 <flux:badge as="button" variant="ghost" inset size="sm" wire:click="sendFriendRequest" icon="user-plus">Confirm</flux:badge>
                             </template>
@@ -368,12 +450,12 @@
                         @endunless
                     </div>
                 </div>
+                
                 <x-dynamic-component 
                     :component="'svg.' . $this->opponent->victory_shape"
                     class="w-14 h-14"
                 />
-                </div>
-            </flux:card>
+            </div>
         </div>
     </div>
 
@@ -385,7 +467,7 @@
                 <template x-for="i in 4">
                     <div>
                         <button 
-                            @click="playTile('down', i-1, {{ (string) $this->player->id }}); $wire.playTile('down', i)"
+                            @click="playTile('down', i-1, player_id); $wire.playTile('down', i)"
                             class="w-[58px] h-8 animate-pulse flex items-center justify-center"
                             x-show="Object.values(valid_slides).some(slide => slide['space'] === i && slide['direction'] === 'down')"
                         >
@@ -405,7 +487,7 @@
                 <template x-for="i in 4" >
                     <div>
                         <button 
-                            @click="playTile('from_left', i-1, {{ (string) $this->player->id }}); $wire.playTile('right', i)"
+                            @click="playTile('from_left', i-1, player_id); $wire.playTile('right', i)"
                             class="h-[58px] w-8 animate-pulse flex items-center justify-center"
                             x-show="Object.values(valid_slides).some(slide => slide['space'] === 1 + (i - 1) * 4 && slide['direction'] === 'right')"
                         >
@@ -426,8 +508,8 @@
                 <div class="relative">
                     <button 
                         x-show="elephant_phase && valid_elephant_moves.includes(i) && game_status === 'active' && is_player_turn"
-                        @click="moveElephant({{ (string) $this->player->id }}, i); $wire.moveElephant(i)" 
-                        class="absolute inset-0 bg-slate-400 opacity-20 animate-pulse rounded-lg z-20"
+                        @click="moveElephant(player_id, i); $wire.moveElephant(i)" 
+                        class="absolute inset-0 bg-slate-800 dark:bg-slate-100 opacity-20 animate-pulse rounded-lg z-20"
                     ></button>
                     <div 
                         class="absolute inset-0 bg-gray-100 dark:opacity-20 dark:bg-zinc-700 rounded-lg"
@@ -441,8 +523,8 @@
                 <div 
                     class="absolute w-[58px] h-[58px] rounded-lg transition-all duration-700 ease-in-out"
                     :class="{
-                        'bg-orange dark:bg-dark-orange': tile.playerId === {{ (string) $this->player->id }},
-                        'bg-light-teal dark:bg-dark-teal': tile.playerId !== {{ (string) $this->player->id }},
+                        'bg-orange dark:bg-dark-orange': tile.playerId === player_id,
+                        'bg-light-teal dark:bg-dark-teal': tile.playerId === opponent_id,
                         'victory-wave-glow': winning_spaces.includes(tile.space)
                     }"
                     :style="`
@@ -470,7 +552,7 @@
                 <template x-for="i in 4">
                     <div>
                         <button 
-                            @click="playTile('from_right', i-1, {{ (string) $this->player->id }}); $wire.playTile('left', i)"
+                            @click="playTile('from_right', i-1, player_id); $wire.playTile('left', i)"
                             class="h-[58px] w-8 animate-pulse rounded-lg flex items-center justify-center"
                             x-show="Object.values(valid_slides).some(slide => slide['space'] === i * 4 && slide['direction'] === 'left')"
                         >
@@ -490,7 +572,7 @@
                 <template x-for="i in 4">
                     <div>
                         <button 
-                            @click="playTile('up', i-1, {{ (string) $this->player->id }}); $wire.playTile('up', i)"
+                            @click="playTile('up', i-1, player_id); $wire.playTile('up', i)"
                             class="w-[58px] h-8 animate-pulse flex items-center justify-center"
                             x-show="Object.values(valid_slides).some(slide => slide['space'] === i +12 && slide['direction'] === 'up')"
                         >
@@ -503,6 +585,10 @@
                 </template>
             </div>
         </div>
+    </div>
+
+    <div x-show="player_forfeits_at === null && game_status === 'active'">
+        <p class="text-sm text-slate-800 -mt-2 dark:text-gray-200 animate-pulse">Opponent is thinking...</p>
     </div>
 
     <template x-if="player_forfeits_at">
@@ -529,6 +615,9 @@
                         // Check if timer just hit zero and hasn't been handled yet
                         if (!this.hasExpired && now >= forfeitTime) {
                             this.hasExpired = true;
+                            this.player_forfeits_at = null;
+                            this.game_status = 'complete';
+                            this.opponent_is_victor = true;
                             $wire.handleForfeit();
                         }
                     },
@@ -561,4 +650,21 @@
             <flux:button @click="toggleMute()" variant="subtle" icon="speaker-wave" />
         </template>
     </div>
+    <template x-if="game_status === 'complete'">
+        <div class="relative" style="top: -2rem;">
+            <template x-if="player_wants_rematch">
+                <div>
+                    <flux:subheading>Rematch requested</flux:subheading>
+                </div>
+            </template>
+            <template x-if="!player_wants_rematch">
+                <flux:button 
+                    wire:click="requestRematch" 
+                    @click="player_wants_rematch = true"
+                >
+                    Rematch
+                </flux:button>
+            </template>
+        </div>
+    </template>
 </div>
