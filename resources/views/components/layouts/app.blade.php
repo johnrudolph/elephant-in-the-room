@@ -11,6 +11,7 @@
         @livewireStyles
         @fluxStyles
         @livewireScripts
+        @include('partials.social-meta')
     </head>
     <body class="min-h-screen bg-white dark:bg-slate-900 text-zinc-800 dark:text-zinc-200">
         @if (auth()->user())
